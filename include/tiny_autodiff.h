@@ -1,67 +1,104 @@
-// tiny_autodiff.h — reverse-mode autodiff engine, header-only.
-//
-// Design (intentional; mirrors micrograd's structure):
-//   * ValueImpl is the actual DAG node (data, grad, parents, _backward).
-//   * Value is a value-semantic wrapper around shared_ptr<ValueImpl>.
-//     Copying a Value shares the impl — same node, same gradient bucket.
-//   * Operators create a new Value whose impl points at its parents and
-//     whose _backward closure knows the local derivative rules.
-//   * Value::backward() does a topological sort over the DAG (visited
-//     keyed on the impl pointer, not the wrapper), then calls each
-//     node's _backward in reverse post-order with `out.grad += local * upstream.grad`.
-//     `+=` (not `=`) so multi-use nodes accumulate gradients correctly.
-//
-// Currently a hello-world stub — fill in the TODOs to get a working engine.
-
 #pragma once
 
-#include <functional>
 #include <iostream>
-#include <memory>
 #include <vector>
+#include <string>
+#include <sstream>
 
-namespace tinyad {
+struct ValueImpl{
+    double data = 0.0;
+    double grad = 0.0;
+    std::string op;
+    std::vector<std::shared_ptr<ValueImpl>> prev;
 
-// ---------------------------------------------------------------------------
-// ValueImpl — the actual DAG node. Always held by shared_ptr.
-// ---------------------------------------------------------------------------
-struct ValueImpl {
-  double data = 0.0;
-  double grad = 0.0;
-  std::vector<std::shared_ptr<ValueImpl>> prev;
-  std::function<void()> _backward;  // local-derivative rule for this op
+    void to_dot_impl(std::ostringstream& os) const {
+        const void* this_id = static_cast<const void*>(this);
+        os << "  \"" << this_id << "\" [label=\"data=" << data << "|grad=" << grad << "\", shape=record];\n";
+        if(!op.empty()) {
+            os << "  \"op_" << this_id << "\" [label=\"" << op << "\", shape=circle, style=filled, fillcolor=lightgray];\n";
+            os << "  \"op_" << this_id << "\" -> \"" << this_id << "\";\n";
+            for (const auto& p : prev) {
+                p->to_dot_impl(os);
+                const void* p_id = static_cast<const void*>(p.get());
+                os << "  \"" << p_id << "\" -> \"op_" << this_id << "\";\n";
+            }
+        }
+    }
 
-  explicit ValueImpl(double d) : data(d) {}
 };
 
-// ---------------------------------------------------------------------------
-// Value — value-semantic wrapper around a shared ValueImpl.
-// ---------------------------------------------------------------------------
 class Value {
- public:
-  explicit Value(double d)
-      : impl_(std::make_shared<ValueImpl>(d)) {}
+public:
+    Value(double val):impl(std::make_shared<ValueImpl>()) { impl->data = val;}
 
-  // Internal constructor used by operator overloads.
-  explicit Value(std::shared_ptr<ValueImpl> impl) : impl_(std::move(impl)) {}
+    friend std::ostream& operator<<(std::ostream& os, const Value& v){
+        return os << "value(" << v.get() << ")";
+    }
 
-  double data() const { return impl_->data; }
-  double grad() const { return impl_->grad; }
+    Value operator+(const Value& other) const {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = impl->data + other.impl->data;
+        value->op = "+";
+        value->prev = {impl, other.impl};
+        return Value{value};
+    }
 
-  // Access to the underlying impl (used by operator overloads to wire parents).
-  const std::shared_ptr<ValueImpl>& impl() const { return impl_; }
+    Value operator+(double val) const {
+        return *this + Value{val};
+    }
 
-  // TODO Day 2: operator+ (add this first; verify a + b backward gives grads = 1)
-  // TODO Day 3: operator*, operator-, operator/, unary minus
-  // TODO Day 4: backward() — topological sort + reverse traversal
-  // TODO Day 5: activations (tanh, relu, sigmoid, exp, log, pow)
+    Value operator-(const Value& other) const {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = impl->data - other.impl->data;
+        value->op = "-";
+        value->prev = {impl, other.impl};
+        return Value{value};
+    }
 
-  friend std::ostream& operator<<(std::ostream& os, const Value& v) {
-    return os << "Value(data=" << v.data() << ", grad=" << v.grad() << ")";
-  }
+    Value operator-(double val) const {
+        return *this - Value{val};
+    }
 
- private:
-  std::shared_ptr<ValueImpl> impl_;
+    Value operator*(const Value& other) const {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = impl->data * other.impl->data;
+        value->op = "*";
+        value->prev = {impl, other.impl};
+        return Value{value};
+    }
+
+    Value operator*(double val) const {
+        return *this * Value{val};
+    }
+
+    friend Value operator+(double val, const Value& rhs) {
+        return Value{val} + rhs;
+}
+
+    friend Value operator-(double val, const Value& rhs) {
+        return Value{val} - rhs;
+    }
+
+    friend Value operator*(double val, const Value& rhs) {
+        return Value{val} * rhs;
+    }
+
+    double get() const {return impl->data;}
+
+
+    std::string to_dot() const {
+        std::ostringstream os;
+        os << "digraph G {\n";
+        os << "  rankdir=LR;\n";
+        impl->to_dot_impl(os);
+        os << "}\n";
+        return os.str();
+    }
+
+private:
+    std::shared_ptr<ValueImpl> impl;
+
+    explicit Value(std::shared_ptr<ValueImpl> impl) : impl(std::move(impl)){}
+
 };
 
-}  // namespace tinyad

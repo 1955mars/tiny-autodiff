@@ -28,3 +28,7 @@ cmake-build-*/
 CMakeCache.txt
 CMakeFiles/
 compile_commands.json
+
+# Generated demo artifacts
+graph.dot
+graph.svg

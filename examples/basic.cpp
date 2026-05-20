@@ -1,30 +1,18 @@
-// basic.cpp — smallest demo of the autodiff engine.
-//
-// Day 2 target: implement `operator+` and uncomment the block below, then
-// run this binary and verify by hand:
-//
-//   c = a + b
-//   d(c)/d(a) = 1, d(c)/d(b) = 1
-//   so after c.backward(): a.grad == 1.0, b.grad == 1.0
-
 #include "tiny_autodiff.h"
-#include <iostream>
+#include <fstream>
 
 int main() {
-  using tinyad::Value;
+    Value a{3.0};
+    std::cout << a << std::endl;
 
-  Value a(2.0);
-  Value b(-3.0);
+    Value b = 5 - a;
+    std::cout << b << std::endl;
 
-  std::cout << "a = " << a << "\n";
-  std::cout << "b = " << b << "\n";
+    Value c = -1 + a + b;
+    std::cout << c << std::endl;
 
-  // -- Day 2: implement operator+ and uncomment this block --
-  // auto c = a + b;
-  // c.backward();
-  // std::cout << "c       = " << c       << "\n";
-  // std::cout << "a.grad  = " << a.grad() << "  (expected 1.0)\n";
-  // std::cout << "b.grad  = " << b.grad() << "  (expected 1.0)\n";
+    Value d = 4 * c + 5 * a - 1;
+    std::cout << d << std::endl;
 
-  return 0;
+    std::ofstream("graph.dot") << d.to_dot();
 }
