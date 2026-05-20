@@ -2,6 +2,7 @@
 #include <fstream>
 
 int main() {
+
     Value a{3.0};
     std::cout << a << std::endl;
 
@@ -14,5 +15,11 @@ int main() {
     Value d = 4 * c + 5 * a - 1;
     std::cout << d << std::endl;
 
+
+    d.backward();
+
+
     std::ofstream("graph.dot") << d.to_dot();
+
+
 }
