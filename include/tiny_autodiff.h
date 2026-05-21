@@ -320,6 +320,28 @@ public:
         return Value{value};
     }
 
+    //log
+    friend Value log(const Value& a) {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = std::log(a.impl->data);
+        value->op = "log";
+        value->prev = {a.impl};
+
+        /*
+            b = log(a);
+            db/da = 1/a;
+        */
+
+        auto a_impl = a.impl;
+        ValueImpl* out_raw = value.get();
+        out_raw->backward = [a_impl, out_raw]() {
+            a_impl->grad += out_raw->grad * (1.0/a_impl->data);
+        };
+
+        return Value{value};
+    }
+
+
 
     double get() const {return impl->data;}
     double grad() const {return impl->grad;}

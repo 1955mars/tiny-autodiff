@@ -88,4 +88,28 @@ void runTests() {
 
     // The cute one: exp(x) * exp(-x) = 1 (constant), so deriv = 0
     gradcheck([](Value x) { return exp(x) * exp(-x); }, 0.7);
+
+    // log(1) = 0, log'(1) = 1
+    gradcheck([](Value x) { return log(x); }, 1.0);
+
+    // log(e) = 1, log'(e) = 1/e ≈ 0.368
+    gradcheck([](Value x) { return log(x); }, 2.71828);
+
+    // log(2) ≈ 0.693, log'(2) = 0.5
+    gradcheck([](Value x) { return log(x); }, 2.0);
+
+    // log(0.5) ≈ -0.693, log'(0.5) = 2.0
+    gradcheck([](Value x) { return log(x); }, 0.5);
+
+    // Composition: d/dx[log(x²)] = 2/x. At x=3: deriv = 0.667
+    gradcheck([](Value x) { return log(x * x); }, 3.0);
+
+    // Cute identity: log(exp(x)) = x, so derivative = 1 for every x
+    gradcheck([](Value x) { return log(exp(x)); }, 1.7);
+
+    // Inverse identity: log(1/x) = -log(x), deriv = -1/x. At x=2: -0.5
+    gradcheck([](Value x) { return log(Value{1.0} / x); }, 2.0);
+
+    // Multi-use: log(x) + log(x) = 2·log(x), deriv = 2/x. At x=3: 0.667
+    gradcheck([](Value x) { return log(x) + log(x); }, 3.0);
 }
