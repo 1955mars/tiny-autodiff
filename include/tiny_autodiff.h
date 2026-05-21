@@ -229,7 +229,7 @@ public:
         return Value{value};
     }
 
-    //tanh
+    //tanh: tanh(x) = (e^x - e^-x)/(e^x + e^-x)
     friend Value tanh(const Value& a){
         auto value = std::make_shared<ValueImpl>();
         value->data = std::tanh(a.impl->data);
@@ -252,7 +252,7 @@ public:
 
     }
 
-    //relu
+    //relu: relu(x) = max(0, x);
     friend Value relu(const Value& a) {
         auto value = std::make_shared<ValueImpl>();
         value->data = a.impl->data > 0 ? a.impl->data : 0.0;
@@ -275,6 +275,30 @@ public:
 
         return Value{value};
     }
+
+    // sigmoid: sigmoid(x) = 1/(1 + e^(-x))
+    friend Value sigmoid(const Value& a) {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = 1.0/(1.0 + std::exp(-a.impl->data));
+        value->op = "sigmoid";
+        value->prev = {a.impl};
+
+        /*
+            b = sigmoid(a);
+            db/da = sigmoid(a) * (1 - sigmoid(a));
+
+            dc/da = dc/db * db/da;
+        */
+
+        auto a_impl = a.impl;
+        ValueImpl* out_raw = value.get();
+        out_raw->backward = [a_impl, out_raw]() {
+            a_impl->grad += out_raw->grad * (out_raw->data * (1.0 - out_raw->data));
+        };
+
+        return Value{value};
+    }
+
 
     double get() const {return impl->data;}
     double grad() const {return impl->grad;}
@@ -312,7 +336,7 @@ inline bool gradcheck(std::function<Value(Value)> f, double x_val, double h = 1e
     double err = std::abs(numerical-analytical);
     bool ok = err < tol;
 
-    std::cout << "grad check analytical = " << analytical << " numerical = " << numerical << " err = " << err << " ok = " << (ok ? "Y" : "X") << std::endl;
+    std::cout << "grad check analytical = " << analytical << " numerical = " << numerical << " err = " << err << " ok = " << (ok ? "YES" : "NO") << std::endl;
 
     return ok;
 

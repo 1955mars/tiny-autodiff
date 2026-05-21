@@ -48,4 +48,21 @@ void runTests() {
     // Multi-use with unary minus — relu in both branches
     gradcheck([](Value x) { return relu(x) + relu(-x); }, 3.0);  // = 3 + 0 = 3; deriv = 1
     gradcheck([](Value x) { return relu(x) + relu(-x); }, -3.0); // = 0 + 3 = 3; deriv = -1
+
+    //sigmoid
+    // σ(0) = 0.5, σ'(0) = 0.25 — the canonical test
+    gradcheck([](Value x) { return sigmoid(x) + sigmoid(x); }, 0.0);
+
+    // Off-zero: σ(2) ≈ 0.881, σ'(2) ≈ 0.105
+    gradcheck([](Value x) { return sigmoid(x); }, 2.0);
+
+    // Negative: σ(-2) ≈ 0.119, σ'(-2) ≈ 0.105 (symmetric)
+    gradcheck([](Value x) { return sigmoid(x); }, -2.0);
+
+    // Composition through arithmetic
+    gradcheck([](Value x) { return sigmoid(x * x - 1.0); }, 1.5);
+
+    // Identity: σ(x) + σ(-x) = 1 always, so deriv = 0 at every x.
+    // Cute test that exercises multi-use + symmetry.
+    gradcheck([](Value x) { return sigmoid(x) + sigmoid(-x); }, 0.7);
 }
