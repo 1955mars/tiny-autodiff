@@ -6,6 +6,7 @@
 #include <sstream>
 #include <functional>
 #include <unordered_set>
+#include <cmath>
 
 struct ValueImpl{
     double data = 0.0;
@@ -226,6 +227,29 @@ public:
         };
         
         return Value{value};
+    }
+
+    //tanh
+    friend Value tanh(const Value& a){
+        auto value = std::make_shared<ValueImpl>();
+        value->data = std::tanh(a.impl->data);
+        value->op = "tanh";
+        value->prev = {a.impl};
+
+        /*
+            b = tanh(a);
+            db/da = 1- (tanh(a)^2) = 1 - b^2;
+        */
+
+        auto a_impl = a.impl;
+        ValueImpl* out_raw = value.get();
+
+        value->backward = [a_impl, out_raw]() {
+            a_impl->grad += out_raw->grad * (1 - out_raw->data * out_raw->data);
+        };
+
+        return Value{value};
+
     }
 
     double get() const {return impl->data;}

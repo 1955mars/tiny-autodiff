@@ -17,17 +17,22 @@ int main() {
 
     d.backward();
 
-*/
+
 
     Value a{3.0};
     Value b{-4.0};
 
     Value c = a/b + a/b;
 
-    c.backward();
+*/
+    Value x{0.5};
+    Value y{2.0};
+    Value z = tanh(x * y + 1.0);
 
-    std::cout << b.grad() << std::endl;
-    std::ofstream("graph.dot") << c.to_dot();
+    z.backward();
+
+    std::cout << x.grad() << "|" << y.grad() << std::endl;
+    std::ofstream("graph.dot") << z.to_dot();
 
 
 }
