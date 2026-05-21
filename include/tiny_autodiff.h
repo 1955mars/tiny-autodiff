@@ -67,6 +67,7 @@ public:
         return os << "value(" << v.get() << ")";
     }
 
+    // Addition
     Value operator+(const Value& other) const {
         auto value = std::make_shared<ValueImpl>();
         value->data = impl->data + other.impl->data;
@@ -98,6 +99,11 @@ public:
         return *this + Value{val};
     }
 
+    friend Value operator+(double val, const Value& rhs) {
+        return Value{val} + rhs;
+    }
+
+    // Subtraction
     Value operator-(const Value& other) const {
         auto value = std::make_shared<ValueImpl>();
         value->data = impl->data - other.impl->data;
@@ -128,6 +134,11 @@ public:
         return *this - Value{val};
     }
 
+    friend Value operator-(double val, const Value& rhs) {
+        return Value{val} - rhs;
+    }
+
+    // Multiplication
     Value operator*(const Value& other) const {
         auto value = std::make_shared<ValueImpl>();
         value->data = impl->data * other.impl->data;
@@ -158,16 +169,63 @@ public:
         return *this * Value{val};
     }
 
-    friend Value operator+(double val, const Value& rhs) {
-        return Value{val} + rhs;
-}
-
-    friend Value operator-(double val, const Value& rhs) {
-        return Value{val} - rhs;
-    }
-
     friend Value operator*(double val, const Value& rhs) {
         return Value{val} * rhs;
+    }
+
+    //Division operator 
+    Value operator/(const Value& other) const {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = impl->data/other.impl->data;
+        value->op = "/";
+        value->prev = {impl, other.impl};
+
+        /*
+            c = a/b;
+            dc/da = 1/b;
+            dc/db = -a/b^2;
+
+            if f is a function of c, from chain rule
+            df/da = df/dc * dc/da = df/dc * 1/b;
+            df/db = df/dc * dc/db = df/dc * -a/b^2;
+        */
+
+        auto a_impl = impl;
+        auto b_impl = other.impl;
+        ValueImpl* out_raw = value.get(); 
+
+        value->backward = [a_impl, b_impl, out_raw ]() {
+            auto inv_b = (1/b_impl->data);
+            a_impl->grad += out_raw->grad * inv_b;
+            b_impl->grad += out_raw->grad * -a_impl->data * inv_b * inv_b;
+        };
+
+        return Value{value};
+    }
+
+    Value operator/(double val) const {
+        return *this/Value{val};
+    }
+
+    friend Value operator/(double val, const Value& rhs) {
+        return Value{val}/rhs;
+    }
+
+    //Unary Minus
+    Value operator-() const {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = -impl->data;
+        value->op = "neg";
+        value->prev = {impl};
+
+        auto a_impl = impl;
+        ValueImpl* out_raw = value.get();
+
+        value->backward = [a_impl, out_raw](){
+            a_impl->grad += -out_raw->grad;
+        };
+        
+        return Value{value};
     }
 
     double get() const {return impl->data;}
