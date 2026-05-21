@@ -341,6 +341,27 @@ public:
         return Value{value};
     }
 
+    //pow(x, n)
+    friend Value pow(const Value& a, double n) {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = std::pow(a.impl->data, n);
+        value->op = "pow";
+        value->prev = {a.impl};
+
+        /*
+            b = pow(a, n);
+            db/da = n * pow(a, n-1);
+        */
+
+        auto a_impl = a.impl;
+        ValueImpl* out_raw = value.get();
+        out_raw->backward = [a_impl, out_raw, n]() {
+            a_impl->grad += out_raw->grad * (n * std::pow(a_impl->data, n - 1.0));
+        };
+
+        return Value{value};
+    }
+
 
 
     double get() const {return impl->data;}

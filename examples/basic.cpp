@@ -112,4 +112,25 @@ void runTests() {
 
     // Multi-use: log(x) + log(x) = 2·log(x), deriv = 2/x. At x=3: 0.667
     gradcheck([](Value x) { return log(x) + log(x); }, 3.0);
+
+    // x² at x=3: deriv = 2x = 6
+    gradcheck([](Value x) { return pow(x, 2.0); }, 3.0);
+
+    // x³ at x=2: deriv = 3x² = 12
+    gradcheck([](Value x) { return pow(x, 3.0); }, 2.0);
+
+    // sqrt(x) = x^0.5 at x=4: deriv = 0.5·x^(-0.5) = 0.25
+    gradcheck([](Value x) { return pow(x, 0.5); }, 4.0);
+
+    // x^(-1) = 1/x at x=2: deriv = -1/x² = -0.25
+    gradcheck([](Value x) { return pow(x, -1.0); }, 2.0);
+
+    // x^0 = 1 (constant) at any x: deriv = 0
+    gradcheck([](Value x) { return pow(x, 0.0); }, 2.5);
+
+    // Composition: (x+1)² at x=2 → 9, deriv = 2(x+1) = 6
+    gradcheck([](Value x) { return pow(x + 1.0, 2.0); }, 2.0);
+
+    // Multi-use: x² + x² = 2x², deriv = 4x at x=3 → 12
+    gradcheck([](Value x) { return pow(x, 2.0) + pow(x, 2.0); }, 3.0);
 }
