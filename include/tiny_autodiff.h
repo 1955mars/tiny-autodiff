@@ -272,3 +272,25 @@ private:
 
 };
 
+inline bool gradcheck(std::function<Value(Value)> f, double x_val, double h = 1e-5, double tol = 1e-4) {
+    
+    // Analytical: build DAG, run backward, read x.grad()
+    Value x{x_val};
+    Value y = f(x);
+    y.backward();
+    double analytical = x.grad();
+
+    // Numerical: central differences (no backward needed)
+    Value y_plus = f(x_val+h);
+    Value y_minus = f(x_val-h);
+    double numerical = (y_plus.get() - y_minus.get())/ (2.0 * h);
+
+    double err = std::abs(numerical-analytical);
+    bool ok = err < tol;
+
+    std::cout << "grad check analytical = " << analytical << " numerical = " << numerical << " err = " << err << " ok = " << (ok ? "Y" : "X") << std::endl;
+
+    return ok;
+
+}
+
