@@ -6,37 +6,8 @@ void runTests();
 
 int main() {
 /*
-    Value a{3.0};
-    std::cout << a << std::endl;
-
-    Value b = 5 - a;
-    std::cout << b << std::endl;
-
-    Value c = -1 + a + b;
-    std::cout << c << std::endl;
-
-    Value d = 4 * c + 5 * a - 1;
-    std::cout << d << std::endl;
-
-    d.backward();
-
-
-
-    Value a{3.0};
-    Value b{-4.0};
-
-    Value c = a/b + a/b;
-
-    Value x{0.5};
-    Value y{2.0};
-    Value z = tanh(x * y + 1.0);
-
-    z.backward();
-
-    std::cout << x.grad() << "|" << y.grad() << std::endl;
     std::ofstream("graph.dot") << z.to_dot();
-
-    */
+*/
 
     runTests();
 
@@ -65,5 +36,16 @@ void runTests() {
 
     // Multi-use: x appears twice
     gradcheck([](Value x) { return x + x; },             3.5);     // 2.0 — catches = vs += bugs!
-    
+
+    // relu
+    gradcheck([](Value x) { return relu(x); },           3.0);      // 1.0
+    gradcheck([](Value x) { return relu(x); },           -3.0);     // 0.0
+
+    // Composition through arithmetic — the real test
+    gradcheck([](Value x) { return relu(x * x - 4.0); }, 3.0);  // x²-4=5>0, so deriv = 2x = 6
+    gradcheck([](Value x) { return relu(x * x - 4.0); }, 1.0);  // x²-4=-3<0, so deriv = 0
+
+    // Multi-use with unary minus — relu in both branches
+    gradcheck([](Value x) { return relu(x) + relu(-x); }, 3.0);  // = 3 + 0 = 3; deriv = 1
+    gradcheck([](Value x) { return relu(x) + relu(-x); }, -3.0); // = 0 + 3 = 3; deriv = -1
 }

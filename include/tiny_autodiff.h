@@ -252,6 +252,30 @@ public:
 
     }
 
+    //relu
+    friend Value relu(const Value& a) {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = a.impl->data > 0 ? a.impl->data : 0.0;
+        value->op = "relu";
+        value->prev = {a.impl};
+
+        /*
+            b = relu(a);
+            db/da = 1 if a > 0.0 else 0.0
+            
+            c is a function of b, from chain rule
+            dc/da = dc/db * db/da = dc/db if a > 0, else 0
+        */
+
+        auto a_impl = a.impl;
+        ValueImpl* out_raw = value.get();
+        value->backward = [a_impl, out_raw]() {
+            a_impl->grad += (a_impl->data > 0 ? out_raw->grad : 0.0);
+        };
+
+        return Value{value};
+    }
+
     double get() const {return impl->data;}
     double grad() const {return impl->grad;}
 
