@@ -65,4 +65,27 @@ void runTests() {
     // Identity: σ(x) + σ(-x) = 1 always, so deriv = 0 at every x.
     // Cute test that exercises multi-use + symmetry.
     gradcheck([](Value x) { return sigmoid(x) + sigmoid(-x); }, 0.7);
+
+    // exp(0) = 1, exp'(0) = 1
+    gradcheck([](Value x) { return exp(x); }, 0.0);
+
+    // exp(1) ≈ 2.718, exp'(1) = exp(1) ≈ 2.718
+    gradcheck([](Value x) { return exp(x); }, 1.0);
+
+    // exp(-2) ≈ 0.135, exp'(-2) ≈ 0.135
+    gradcheck([](Value x) { return exp(x); }, -2.0);
+
+    // Composition: d/dx[exp(x²)] = 2x·exp(x²)
+    // At x=1.5: x²=2.25, exp(2.25)≈9.488, deriv = 3·9.488 ≈ 28.46
+    gradcheck([](Value x) { return exp(x * x); }, 1.5);
+
+    // Composition with subtraction: exp(x - 1) at x=2 → exp(1) ≈ 2.718, deriv = exp(1)
+    gradcheck([](Value x) { return exp(x - 1.0); }, 2.0);
+
+    // Multi-use: exp(x) + exp(x) — should give 2·exp(x); deriv = 2·exp(x)
+    // At x=1: analytical = 2·e ≈ 5.437
+    gradcheck([](Value x) { return exp(x) + exp(x); }, 1.0);
+
+    // The cute one: exp(x) * exp(-x) = 1 (constant), so deriv = 0
+    gradcheck([](Value x) { return exp(x) * exp(-x); }, 0.7);
 }

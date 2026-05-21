@@ -299,6 +299,27 @@ public:
         return Value{value};
     }
 
+    //exp
+    friend Value exp(const Value& a) {
+        auto value = std::make_shared<ValueImpl>();
+        value->data = std::exp(a.impl->data);
+        value->op = "exp";
+        value->prev = {a.impl};
+
+        /*
+            b = exp(a);
+            db/da = exp(a);
+        */
+
+        auto a_impl = a.impl;
+        ValueImpl* out_raw = value.get();
+        out_raw->backward = [a_impl, out_raw]() {
+            a_impl->grad += out_raw->grad * out_raw->data;
+        };
+
+        return Value{value};
+    }
+
 
     double get() const {return impl->data;}
     double grad() const {return impl->grad;}
