@@ -5,15 +5,40 @@
 
 void runTests();
 void testNeuron();
+void testLayer();
 
 int main() {
 /*
     std::ofstream("graph.dot") << z.to_dot();
     runTests();
+    testNeuron();
 */
 
-    testNeuron();
+    testLayer();
+}
 
+void testLayer() {
+    Layer l{3, 2};
+    std::vector<Value> inputs{0.1, 0.2, 0.3};
+
+    auto outs = l(inputs);
+    assert(outs.size() == 2);
+
+    //Build a dummy scalar loss so we can backward
+    Value loss = outs[0] + outs[1];
+    loss.zero_grad();
+    loss.backward();
+
+
+    auto params = l.parameters();
+    assert(params.size() == 8);
+
+    std::cout << "param count: " << params.size() << "\n";
+    for (auto& p : params) {
+        std::cout << "  data=" << p.get() << "  grad=" << p.grad() << "\n";
+    }
+
+    std::ofstream("graph.dot") << loss.to_dot();
 }
 
 void testNeuron() {

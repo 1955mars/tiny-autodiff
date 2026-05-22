@@ -36,3 +36,33 @@ private:
     std::vector<Value> weights;
     Value bias;
 };
+
+class Layer {
+public:
+    explicit Layer(size_t n_in, size_t n_out) {
+        neurons.reserve(n_out);
+        for(size_t i = 0; i < n_out; i++) {
+            neurons.emplace_back(n_in);
+        }
+    }
+
+    std::vector<Value> operator()(const std::vector<Value>& xs) const {
+        std::vector<Value> outs;
+        outs.reserve(neurons.size());
+        for(const auto& n : neurons) {
+            outs.emplace_back(n(xs));
+        }
+        return outs;
+    }
+
+    std::vector<Value> parameters() const {
+        std::vector<Value> params;
+        for(const auto& n : neurons) {
+            auto p = n.parameters();
+            params.insert(params.end(), p.begin(), p.end());
+        }
+        return params;
+    }
+private:
+    std::vector<Neuron> neurons;
+};
