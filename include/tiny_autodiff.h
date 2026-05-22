@@ -35,6 +35,7 @@ struct ValueImpl{
 
 class Value {
 public:
+
     Value(double val):impl(std::make_shared<ValueImpl>()) { impl->data = val;}
 
     void backward() {

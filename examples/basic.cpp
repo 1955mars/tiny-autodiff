@@ -1,15 +1,60 @@
-#include "tiny_autodiff.h"
+#include "nn.h"
+
 #include <fstream>
 
 
 void runTests();
+void testNeuron();
 
 int main() {
 /*
     std::ofstream("graph.dot") << z.to_dot();
+    runTests();
 */
 
-    runTests();
+    testNeuron();
+
+}
+
+void testNeuron() {
+    // Single Neuron
+    {
+        Neuron n{1};
+        std::vector<Value> inputs{Value{0.5}};
+        Value y = n(inputs);
+        std::cout << y.get() << std::endl;
+
+        y.zero_grad();
+        y.backward();
+
+        std::ofstream("graph.dot") << y.to_dot();
+
+        auto params = n.parameters();
+        for(auto& p : params) {
+            std::cout << "param data = " << p.get() << " grad = " << p.grad() << "\n";
+
+        }
+    }
+
+    // Three Neurons
+    {
+        Neuron n{3};
+        std::vector<Value> inputs{0.1, 0.2, 0.3};
+        Value y = n(inputs);
+        std::cout << y.get() << std::endl;
+
+        y.zero_grad();
+        y.backward();
+
+        std::ofstream("graph.dot") << y.to_dot();
+
+        auto params = n.parameters();
+        assert(params.size() == 4);
+        for(auto& p : params) {
+            std::cout << "param data = " << p.get() << " grad = " << p.grad() << "\n";
+        }
+    }
+    
 
 }
 
