@@ -6,16 +6,38 @@
 void runTests();
 void testNeuron();
 void testLayer();
+void testMLP();
 
 int main() {
 /*
     std::ofstream("graph.dot") << z.to_dot();
     runTests();
     testNeuron();
-*/
-
     testLayer();
+*/
+    testMLP();
 }
+
+void testMLP() {
+    MLP mlp{{2, 3, 1}};
+    std::vector<Value> inputs{1.0, 2.0};
+
+    auto outs = mlp(inputs);
+    assert(outs.size() == 1);
+
+    Value loss = outs[0];
+    loss.zero_grad();
+    loss.backward();
+
+    auto params = mlp.parameters();
+    std::cout << "params: " << params.size() << "  (expected 13)\n";
+    for (auto& p : params) {
+        std::cout << "  data=" << p.get() << "  grad=" << p.grad() << "\n";
+    }
+
+    std::ofstream("graph.dot") << loss.to_dot();
+}
+
 
 void testLayer() {
     Layer l{3, 2};

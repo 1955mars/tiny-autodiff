@@ -66,3 +66,33 @@ public:
 private:
     std::vector<Neuron> neurons;
 };
+
+
+class MLP {
+public:
+    explicit MLP(const std::vector<size_t>& sizes) {
+        for(size_t i = 0; i+1 < sizes.size(); i++) {
+            layers.emplace_back(sizes[i], sizes[i+1]);
+        }
+    }
+
+    std::vector<Value> operator()(const std::vector<Value>& xs) {
+        std::vector<Value> v = xs;
+        for(const auto& layer: layers) {
+            v = layer(v);
+        }
+        return v;
+    }
+
+    std::vector<Value> parameters() const {
+        std::vector<Value> params;
+        for (const auto& l : layers) {
+            auto p = l.parameters();
+            params.insert(params.end(), p.begin(), p.end());
+        }
+        return params;
+    }
+
+private:
+    std::vector<Layer> layers;
+};
