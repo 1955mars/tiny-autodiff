@@ -133,4 +133,18 @@ void runTests() {
 
     // Multi-use: x² + x² = 2x², deriv = 4x at x=3 → 12
     gradcheck([](Value x) { return pow(x, 2.0) + pow(x, 2.0); }, 3.0);
+
+    // Minimize f(w) = (w-3)^2 by gradient descent. w should converge to 3
+    {
+        Value w{0.0};
+        double lr = 0.1;
+        for(int i=0; i<50; i++) {
+            Value loss = pow(w - 3.0, 2.0);
+            loss.zero_grad();
+            loss.backward();
+            w.step(lr);
+        }
+        std::cout << "w converged to " << w.get() << "  (expected ~3.0)\n";
+        std::cout << "final loss " << pow(w - 3.0, 2.0).get() << "  (expected ~0)\n";
+    }
 }

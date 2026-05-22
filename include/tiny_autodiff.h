@@ -64,6 +64,24 @@ public:
 
     }
 
+    void zero_grad() {
+        std::unordered_set<const ValueImpl*> visited;
+
+        std::function<void(ValueImpl*)> walk = [&] (ValueImpl* v) {
+            if(visited.count(v)) return;
+            visited.insert(v);
+            v->grad = 0.0;
+            for(const auto& p : v->prev) {
+                walk(p.get());
+            }
+        };
+        walk(impl.get());
+    }
+
+    void step(double lr) {
+        impl->data -= lr * impl->grad;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const Value& v){
         return os << "value(" << v.get() << ")";
     }
