@@ -7,6 +7,7 @@ void runTests();
 void testNeuron();
 void testLayer();
 void testMLP();
+void trainTinyDataSet();
 
 int main() {
 /*
@@ -14,8 +15,67 @@ int main() {
     runTests();
     testNeuron();
     testLayer();
-*/
     testMLP();
+*/
+    trainTinyDataSet();
+}
+
+void trainTinyDataSet() {
+    // Four 3D inputs, four scalar targets in {-1, +1}
+    std::vector<std::vector<double>> X = {
+        {2.0,  3.0, -1.0},
+        {3.0, -1.0,  0.5},
+        {0.5,  1.0,  1.0},
+        {1.0,  1.0, -1.0},
+    };
+    std::vector<double> Y = {1.0, -1.0, -1.0, 1.0};
+
+    MLP mlp{{3, 4, 4, 1}};
+    //layers: l1(3,4) -- l2(4,4) -- l3(4, 1)
+    //parameters: l1(4 * 4) + l2(5 * 4) + l3(5 * 1) = 16 + 20 + 5 = 41
+
+    //Training loop
+    for(int epoch = 0; epoch < 100; epoch++) {
+
+        Value loss{0.0};
+        for(size_t i = 0; i < X.size(); i++) {
+            std::vector<Value> xs;
+            for(double value : X[i]) {
+                xs.emplace_back(value);
+            }
+
+            auto pred = mlp(xs);
+            Value diff = pred[0] - Y[i];
+            loss = loss + diff * diff; //Mean Square Error Style Sum
+        }
+
+        //Backward
+        loss.zero_grad();
+        loss.backward();
+
+        //SGD step
+        double lr = 0.05;
+        for(auto& p : mlp.parameters()) {
+            p.step(lr);
+        }
+
+        //Print every 10 epochs
+        if (epoch % 10 == 0) {
+            std::cout << "epoch " << epoch << " loss " << loss.get() << "\n";
+        }
+
+        if (epoch == 99) {
+            std::ofstream("graph.dot") << loss.to_dot();
+        }
+    }
+
+    //After training, print predictions
+    for(size_t i = 0; i < X.size(); i++) {
+        std::vector<Value> xs;
+        for(double value : X[i]) xs.emplace_back(value);
+        std::cout << " pred = " << mlp(xs)[0].get() << " target = " << Y[i] << "\n";
+    }
+
 }
 
 void testMLP() {
